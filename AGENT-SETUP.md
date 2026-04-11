@@ -25,7 +25,7 @@ bun install
 使用 `--duckdns` 自动解析 server 地址（推荐，server 重启后无需重新配置）：
 
 ```bash
-bun run agent -- init \
+bun run tm-agent -- init \
   --server https://placeholder \
   --token tpyqQy9TGrPAxKln0bSBTAXaEMmgOLgc \
   --duckdns maxthjp
@@ -37,7 +37,7 @@ bun run agent -- init \
 如果在同一局域网，也可以直接指定 IP：
 
 ```bash
-bun run agent -- init --server http://192.168.x.x:7483 --token tpyqQy9TGrPAxKln0bSBTAXaEMmgOLgc
+bun run tm-agent -- init --server http://192.168.x.x:7483 --token tpyqQy9TGrPAxKln0bSBTAXaEMmgOLgc
 ```
 
 ## 第四步：注册可用的 Agent
@@ -46,29 +46,29 @@ bun run agent -- init --server http://192.168.x.x:7483 --token tpyqQy9TGrPAxKln0
 
 ```bash
 # Claude Code（最常用）
-bun run agent -- add claude --cmd "claude -p"
+bun run tm-agent -- add claude --cmd "claude -p"
 
 # Cursor CLI
-bun run agent -- add cursor --cmd "cursor agent --trust"
+bun run tm-agent -- add cursor --cmd "cursor agent --trust"
 
 # Codex
-bun run agent -- add codex --cmd "codex --quiet"
+bun run tm-agent -- add codex --cmd "codex --quiet"
 ```
 
 验证配置：
 
 ```bash
-bun run agent -- list
+bun run tm-agent -- list
 ```
 
 ## 第五步：启动守护进程
 
 ```bash
 # 前台运行（可以看日志）
-bun run agent -- start
+bun run tm-agent -- start
 
 # 后台运行
-bun run agent -- start -d
+bun run tm-agent -- start -d
 ```
 
 启动成功输出：
@@ -93,10 +93,10 @@ bun run agent -- start -d
 
 ```bash
 # 用 tmux 保持后台运行
-tmux new -d -s tm-agent 'cd ~/agentmtcenter && bun run agent -- start'
+tmux new -d -s tm-agent 'cd ~/agentmtcenter && bun run tm-agent -- start'
 
 # 或 nohup
-nohup bun run agent -- start > ~/.tm-agent/agent.log 2>&1 &
+nohup bun run tm-agent -- start > ~/.tm-agent/agent.log 2>&1 &
 ```
 
 ## 快速一键脚本
@@ -105,9 +105,9 @@ nohup bun run agent -- start > ~/.tm-agent/agent.log 2>&1 &
 
 ```bash
 cd ~/agentmtcenter && bun install && \
-bun run agent -- init --server https://placeholder --token tpyqQy9TGrPAxKln0bSBTAXaEMmgOLgc --duckdns maxthjp && \
-bun run agent -- add claude --cmd "claude -p" && \
-bun run agent -- start
+bun run tm-agent -- init --server https://placeholder --token tpyqQy9TGrPAxKln0bSBTAXaEMmgOLgc --duckdns maxthjp && \
+bun run tm-agent -- add claude --cmd "claude -p" && \
+bun run tm-agent -- start
 ```
 
 ## 排错

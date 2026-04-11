@@ -16,75 +16,73 @@ export default function Dashboard() {
   function refresh() { refreshMachines(); refreshSessions(); }
 
   return (
-    <div className="p-4 space-y-5 pb-20">
+    <div className="p-6 space-y-7 pb-20">
       <div className="flex justify-between items-center">
-        <h1 className="text-lg font-bold tracking-tight">Dashboard</h1>
-        <button onClick={refresh} className="text-xs text-slate-500 active:text-white px-2 py-1 rounded-lg">
+        <h1 className="font-heading text-2xl font-bold text-[#111827]">Dashboard</h1>
+        <button onClick={refresh} className="font-caption text-sm text-[#9CA3AF] active:text-[#6B7280] px-2 py-1">
           Refresh
         </button>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <StatCard label="Machines" value={`${onlineMachines}/${totalMachines}`} sub="online" color="blue" />
-        <StatCard label="Agents" value={`${idleAgents}/${totalAgents}`} sub="idle" color="green" />
-        <StatCard label="Running" value={String(runningSessions)} sub="sessions" color="yellow" />
-        <StatCard label="Total" value={String(sessions?.length ?? 0)} sub="sessions" color="slate" />
+        <StatCard label="MACHINES" value={`${onlineMachines}/${totalMachines}`} sub="online" valueColor="#4A96C4" />
+        <StatCard label="AGENTS" value={`${idleAgents}/${totalAgents}`} sub="idle" valueColor="#3B9B6A" />
+        <StatCard label="RUNNING" value={String(runningSessions)} sub="sessions" valueColor="#D4973B" />
+        <StatCard label="TOTAL" value={String(sessions?.length ?? 0)} sub="sessions" valueColor="#6B7280" />
       </div>
 
       <section>
-        <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Agents</h2>
-        <div className="space-y-1.5">
+        <h2 className="font-heading text-[11px] font-semibold text-[#9CA3AF] uppercase tracking-[1.5px] mb-2.5">Agents</h2>
+        <div className="space-y-2">
           {machines && Object.entries(machines).map(([machineId, machine]) => (
             Object.entries(machine.agents).map(([name, agent]) => (
               <div
                 key={`${machineId}-${name}`}
-                className="flex items-center justify-between bg-slate-800/60 rounded-xl px-3.5 py-2.5 active:bg-slate-700"
+                className="flex items-center justify-between bg-white rounded-[10px] border border-[#E5E7EB] px-4 py-3 active:bg-gray-50"
+                style={{boxShadow: "0 1px 4px rgba(0,0,0,0.04)"}}
                 onClick={() => agent.status === "idle" && navigate(`/dispatch?agent=${name}@${machineId}`)}
               >
                 <div className="flex items-center gap-2.5">
                   <span className={`w-2 h-2 rounded-full ${
-                    agent.status === "idle" ? "bg-green-400" : agent.status === "busy" ? "bg-yellow-400" : "bg-red-400"
+                    agent.status === "idle" ? "bg-[#3B9B6A]" : agent.status === "busy" ? "bg-[#D4973B]" : "bg-red-400"
                   }`} />
-                  <span className="text-sm font-medium">{name}</span>
-                  <span className="text-xs text-slate-500">@{machine.hostname}</span>
+                  <span className="text-[15px] font-medium text-[#111827]">{name}</span>
+                  <span className="font-data text-xs text-[#9CA3AF]">@{machine.hostname}</span>
                 </div>
-                <span className={`text-xs px-2 py-0.5 rounded-full ${
-                  agent.status === "idle" ? "bg-green-500/10 text-green-400" :
-                  agent.status === "busy" ? "bg-yellow-500/10 text-yellow-400" :
-                  "bg-slate-700 text-slate-400"
+                <span className={`font-data text-[11px] font-medium ${
+                  agent.status === "idle" ? "text-[#3B9B6A]" : agent.status === "busy" ? "text-[#D4973B]" : "text-red-400"
                 }`}>{agent.status}</span>
               </div>
             ))
           ))}
           {(!machines || Object.keys(machines).length === 0) && (
-            <p className="text-xs text-slate-600 text-center py-4">No agents connected</p>
+            <p className="font-caption text-sm text-[#D1D5DB] text-center py-6">No agents connected</p>
           )}
         </div>
       </section>
 
       <section>
-        <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Recent Sessions</h2>
-        <div className="space-y-1.5">
-          {(!sessions || sessions.length === 0) && <p className="text-xs text-slate-600 text-center py-4">No sessions yet</p>}
+        <h2 className="font-heading text-[11px] font-semibold text-[#9CA3AF] uppercase tracking-[1.5px] mb-2.5">Recent Sessions</h2>
+        <div className="space-y-2">
+          {(!sessions || sessions.length === 0) && <p className="font-caption text-sm text-[#D1D5DB] text-center py-6">No sessions yet</p>}
           {sessions?.slice(-10).reverse().map((s) => (
             <div
               key={s.id}
-              className="flex items-center justify-between bg-slate-800/60 rounded-xl px-3.5 py-2.5 active:bg-slate-700"
+              className="flex items-center justify-between bg-white rounded-[10px] border border-[#E5E7EB] px-4 py-3 active:bg-gray-50"
+              style={{boxShadow: "0 1px 4px rgba(0,0,0,0.04)"}}
               onClick={() => navigate(`/chat/${s.id}`)}
             >
               <div className="flex items-center gap-2.5 min-w-0">
                 <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                  s.status === "running" ? "bg-green-400 animate-pulse" : s.status === "completed" ? "bg-slate-500" : "bg-red-400"
+                  s.status === "running" ? "bg-[#3B9B6A] animate-pulse" : s.status === "completed" ? "bg-[#D1D5DB]" : "bg-red-400"
                 }`} />
                 <div className="min-w-0">
-                  <p className="text-sm font-medium truncate">{s.agentName}@{s.machineId}</p>
-                  <p className="text-xs text-slate-500 truncate">{s.instruction || "(empty)"}</p>
+                  <p className="text-[15px] font-medium text-[#111827] truncate">{s.agentName}@{s.machineId}</p>
+                  <p className="text-xs text-[#9CA3AF] truncate">{s.instruction || "(empty)"}</p>
                 </div>
               </div>
-              <span className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${
-                s.status === "running" ? "bg-green-500/10 text-green-400" :
-                s.status === "completed" ? "bg-slate-700 text-slate-400" :
-                "bg-red-500/10 text-red-400"
+              <span className={`font-data text-[11px] font-medium flex-shrink-0 ${
+                s.status === "running" ? "text-[#3B9B6A]" : s.status === "completed" ? "text-[#D1D5DB]" : "text-red-400"
               }`}>{s.status}</span>
             </div>
           ))}
@@ -94,22 +92,12 @@ export default function Dashboard() {
   );
 }
 
-function StatCard({ label, value, sub, color }: { label: string; value: string; sub: string; color: string }) {
-  const colors: Record<string, string> = {
-    blue: "from-blue-500/10 to-transparent border-blue-500/20",
-    green: "from-green-500/10 to-transparent border-green-500/20",
-    yellow: "from-yellow-500/10 to-transparent border-yellow-500/20",
-    slate: "from-slate-500/5 to-transparent border-slate-500/20",
-  };
-  const textColors: Record<string, string> = {
-    blue: "text-blue-400", green: "text-green-400", yellow: "text-yellow-400", slate: "text-slate-400",
-  };
-
+function StatCard({ label, value, sub, valueColor }: { label: string; value: string; sub: string; valueColor: string }) {
   return (
-    <div className={`bg-gradient-to-br ${colors[color]} border rounded-xl p-3.5`}>
-      <div className="text-xs text-slate-500">{label}</div>
-      <div className={`text-2xl font-bold mt-0.5 ${textColors[color]}`}>{value}</div>
-      <div className="text-xs text-slate-600">{sub}</div>
+    <div className="bg-white rounded-[10px] border border-[#E5E7EB] p-4" style={{boxShadow: "0 2px 8px rgba(0,0,0,0.04)"}}>
+      <div className="font-heading text-[11px] font-semibold text-[#9CA3AF] tracking-[1.5px]">{label}</div>
+      <div className="font-data text-[30px] font-bold mt-1" style={{color: valueColor}}>{value}</div>
+      <div className="font-caption text-xs text-[#D1D5DB]">{sub}</div>
     </div>
   );
 }

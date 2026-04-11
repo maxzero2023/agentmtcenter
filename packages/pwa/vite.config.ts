@@ -13,8 +13,8 @@ export default defineConfig({
         name: 'TM Dispatch',
         short_name: 'TM',
         description: 'Agent Dispatch Center',
-        theme_color: '#0f172a',
-        background_color: '#0f172a',
+        theme_color: '#FAFBFC',
+        background_color: '#FAFBFC',
         display: 'standalone',
         icons: [
           { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },

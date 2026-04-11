@@ -22,7 +22,7 @@ Bun workspace monorepo，四个包：
 # 开发
 bun run server          # 启动调度服务器 (port 7483)
 bun run pwa             # 启动 PWA dev server (port 5173)
-bun run agent -- start  # 启动 agent 守护进程
+bun run tm-agent -- start  # 启动 agent 守护进程
 
 # 构建
 cd packages/pwa && bun run build

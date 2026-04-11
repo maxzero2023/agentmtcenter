@@ -56,15 +56,14 @@ export function getAuth(): AuthState | null {
   return saved ? JSON.parse(saved) : null;
 }
 
+// API 用相对路径（同源），不依赖保存的 server URL
 export function apiUrl(path: string): string {
-  const auth = getAuth();
-  if (!auth) throw new Error("Not authenticated");
-  return `${auth.server}${path}`;
+  return path;
 }
 
 export function apiHeaders(): Record<string, string> {
   const auth = getAuth();
-  if (!auth) throw new Error("Not authenticated");
+  if (!auth) return { "Content-Type": "application/json" };
   return {
     Authorization: `Bearer ${auth.token}`,
     "Content-Type": "application/json",
@@ -74,5 +73,6 @@ export function apiHeaders(): Record<string, string> {
 export function wsUrl(path: string): string {
   const auth = getAuth();
   if (!auth) throw new Error("Not authenticated");
-  return auth.server.replace(/^http/, "ws") + path + `?token=${auth.token}`;
+  const origin = typeof window !== "undefined" ? window.location.origin : auth.server;
+  return origin.replace(/^http/, "ws") + path + `?token=${auth.token}`;
 }

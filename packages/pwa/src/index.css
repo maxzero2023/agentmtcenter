@@ -5,8 +5,9 @@ html, body, #root {
   padding: 0;
   height: 100%;
   height: 100dvh;
-  background: #0f172a;
-  color: #e2e8f0;
+  background: #FAFBFC;
+  color: #111827;
+  font-family: 'Geist', system-ui, sans-serif;
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -18,24 +19,30 @@ html, body, #root {
 /* Allow text selection in code/pre */
 pre, code, .selectable { user-select: text; -webkit-user-select: text; }
 
-/* safe area */
-.pt-safe { padding-top: env(safe-area-inset-top); }
-.pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+/* Font shortcuts */
+.font-heading { font-family: 'Funnel Sans', system-ui, sans-serif; }
+.font-body { font-family: 'Geist', system-ui, sans-serif; }
+.font-caption { font-family: 'Newsreader', Georgia, serif; font-style: italic; }
+.font-data { font-family: 'Geist Mono', ui-monospace, monospace; }
 
-/* nav height = 3.5rem + safe bottom */
+/* safe area */
+.pt-safe { padding-top: env(safe-area-inset-top, 0px); }
+.pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
+
+/* nav height = 3rem + safe bottom */
 .h-app {
-  height: calc(100dvh - 3.5rem - env(safe-area-inset-bottom));
+  height: calc(100dvh - 3rem - env(safe-area-inset-bottom, 0px));
 }
 
-/* Smooth scrolling everywhere */
-* { scrollbar-width: thin; scrollbar-color: #334155 transparent; }
+/* Smooth scrolling */
+* { scrollbar-width: thin; scrollbar-color: #E5E7EB transparent; }
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: #E5E7EB; border-radius: 4px; }
 
 /* Glass nav */
 .glass-nav {
-  background: rgba(15, 23, 42, 0.85);
+  background: rgba(255, 255, 255, 0.88);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   backdrop-filter: blur(20px) saturate(180%);
 }
@@ -43,8 +50,8 @@ pre, code, .selectable { user-select: text; -webkit-user-select: text; }
 /* Input focus ring */
 input:focus, textarea:focus {
   outline: none;
-  border-color: #3b82f6 !important;
-  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.3);
+  border-color: #4A96C4 !important;
+  box-shadow: 0 0 0 2px rgba(74, 150, 196, 0.15);
 }
 
 /* Transition all interactive elements */

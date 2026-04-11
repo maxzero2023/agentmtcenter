@@ -411,21 +411,29 @@ app.post("/chat", async (c) => {
   let proc: ReturnType<typeof Bun.spawn>;
 
   if (workspaceId.startsWith("cursor:") || workspaceId.startsWith("cursor-ws:")) {
-    // Cursor: 获取项目路径，启动新 cursor agent session
-    const wsHash = workspaceId.replace(/^cursor(-ws)?:/, "");
-    const wsJson = join(CURSOR_WS_DIR, wsHash, "workspace.json");
-    let cwd = homedir();
-    if (existsSync(wsJson)) {
-      try {
-        const ws = JSON.parse(readFileSync(wsJson, "utf-8"));
-        cwd = decodeURIComponent(ws.folder?.replace("file://", "") || cwd);
-      } catch {}
+    // Cursor: 从 resolveWorkspacePath 获取项目路径
+    const wsPath = resolveWorkspacePath(workspaceId);
+    if (!wsPath || !existsSync(wsPath)) {
+      return c.json({ error: "Cursor workspace path not found", source: "cursor" }, 404);
     }
-    proc = Bun.spawn(["cursor", "agent", "--trust", message], {
-      cwd,
+    // cursor agent --print --trust --resume=<sessionId> (需要 expect 提供 TTY)
+    const expectScript = `
+spawn cursor agent --print --trust --resume="${sessionId}" "${message.replace(/"/g, '\\"')}"
+set timeout 120
+expect {
+    timeout { exit 1 }
+    eof { exit 0 }
+    -re ".+" { exp_continue }
+}`;
+    proc = Bun.spawn(["expect", "-c", expectScript], {
+      cwd: wsPath,
       stdout: "pipe",
       stderr: "pipe",
     });
+    // 120s 超时自动 kill
+    const timeout = setTimeout(() => { try { proc.kill(); } catch {} }, 120000);
+    proc.exited.then(() => clearTimeout(timeout));
+    console.log(`🔄 Cursor resume: ${sessionId} in ${wsPath}`);
   } else {
     // Claude Code: resume session
     const projPath = decodeProjectName(workspaceId);
@@ -471,7 +479,15 @@ app.post("/new", async (c) => {
 
   if (selectedAgent === "cursor") {
     const prompt = message || "hello";
-    proc = Bun.spawn(["cursor", "agent", "--trust", prompt], {
+    const expectScript = `
+spawn cursor agent --print --trust "${prompt.replace(/"/g, '\\"')}"
+set timeout 120
+expect {
+    timeout { exit 1 }
+    eof { exit 0 }
+    -re ".+" { exp_continue }
+}`;
+    proc = Bun.spawn(["expect", "-c", expectScript], {
       cwd: projectPath,
       stdout: "pipe",
       stderr: "pipe",
@@ -567,6 +583,44 @@ app.get("/commands", (c) => {
   }
 
   return c.json(commands);
+});
+
+// POST /api/workspaces/upload — 上传文件/图片到 workspace
+app.post("/upload", async (c) => {
+  const form = await c.req.formData();
+  const file = form.get("file") as File | null;
+  const workspaceId = form.get("workspaceId") as string | null;
+
+  if (!file || !workspaceId) {
+    return c.json({ error: "Missing file or workspaceId" }, 400);
+  }
+
+  const wsPath = resolveWorkspacePath(workspaceId);
+  if (!wsPath) return c.json({ error: "Workspace not found" }, 404);
+
+  // 保存到 workspace 的 .tm-uploads/ 目录
+  const uploadDir = join(wsPath, ".tm-uploads");
+  if (!existsSync(uploadDir)) {
+    const { mkdirSync } = await import("fs");
+    mkdirSync(uploadDir, { recursive: true });
+  }
+
+  const timestamp = Date.now();
+  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+  const fileName = `${timestamp}-${safeName}`;
+  const filePath = join(uploadDir, fileName);
+
+  const buffer = await file.arrayBuffer();
+  const { writeFileSync } = await import("fs");
+  writeFileSync(filePath, Buffer.from(buffer));
+
+  return c.json({
+    ok: true,
+    path: filePath,
+    name: file.name,
+    size: file.size,
+    type: file.type,
+  });
 });
 
 // === Workspace path resolver ===

@@ -9,7 +9,6 @@ export default function Login() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // 从 URL hash 读取 token 自动登录：#token=xxx
   useEffect(() => {
     const hash = window.location.hash;
     const match = hash.match(/token=([^&]+)/);
@@ -38,26 +37,27 @@ export default function Login() {
   }
 
   return (
-    <div className="h-full flex items-center justify-center p-6 pt-safe pb-safe">
-      <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-5">
-        <div className="text-center space-y-2">
-          <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-lg shadow-blue-500/20">
-            <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={1.5} className="w-8 h-8">
+    <div className="h-full flex items-center justify-center p-8 pt-safe pb-safe">
+      <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-7">
+        <div className="text-center space-y-3">
+          <div className="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-b from-[#4A96C4] to-[#3A7CA5] flex items-center justify-center" style={{boxShadow: "0 8px 28px rgba(74,150,196,0.12)"}}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={1.5} className="w-9 h-9">
               <path d="M13 10V3L4 14h7v7l9-11h-7z" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </div>
-          <h1 className="text-xl font-bold tracking-tight">TM Dispatch</h1>
-          <p className="text-xs text-slate-500">Agent Dispatch Center</p>
+          <h1 className="font-heading text-2xl font-bold text-[#111827]">TM Dispatch</h1>
+          <p className="font-caption text-sm text-[#9CA3AF]">Agent Dispatch Center</p>
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-3.5">
           <input
             type="url"
             placeholder="Server URL"
             value={server}
             onChange={(e) => setServer(e.target.value)}
             required
-            className="w-full px-4 py-3 bg-slate-800/80 border border-slate-700 rounded-xl text-sm placeholder:text-slate-600"
+            className="w-full px-4 py-3 bg-white border border-[#E5E7EB] rounded-[10px] text-sm text-[#111827] placeholder:text-[#D1D5DB]"
+            style={{boxShadow: "0 1px 4px rgba(0,0,0,0.04)"}}
           />
           <input
             type="password"
@@ -65,20 +65,22 @@ export default function Login() {
             value={token}
             onChange={(e) => setToken(e.target.value)}
             required
-            className="w-full px-4 py-3 bg-slate-800/80 border border-slate-700 rounded-xl text-sm placeholder:text-slate-600"
+            className="w-full px-4 py-3 bg-white border border-[#E5E7EB] rounded-[10px] text-sm text-[#111827] placeholder:text-[#D1D5DB]"
+            style={{boxShadow: "0 1px 4px rgba(0,0,0,0.04)"}}
           />
         </div>
 
         {error && (
-          <div className="px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-xl">
-            <p className="text-red-400 text-xs">{error}</p>
+          <div className="px-3 py-2 bg-red-50 border border-red-200 rounded-[10px]">
+            <p className="text-red-600 text-xs">{error}</p>
           </div>
         )}
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-3 bg-blue-600 hover:bg-blue-500 rounded-xl text-sm font-semibold disabled:opacity-50 shadow-lg shadow-blue-600/20"
+          className="font-heading w-full py-3 bg-[#4A96C4] hover:bg-[#3A7CA5] rounded-[10px] text-sm font-semibold text-white disabled:opacity-50"
+          style={{boxShadow: "0 4px 16px rgba(74,150,196,0.15)"}}
         >
           {loading ? (
             <span className="inline-flex items-center gap-2">
