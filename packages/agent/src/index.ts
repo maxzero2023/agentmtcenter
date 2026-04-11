@@ -14,10 +14,31 @@ program
 program
   .command("init")
   .description("初始化：连接服务器并注册")
-  .requiredOption("--server <url>", "调度服务器地址")
+  .requiredOption("--server <url>", "调度服务器地址（或用 --duckdns 自动解析）")
   .requiredOption("--token <token>", "服务器 secret token")
-  .action(async (opts: { server: string; token: string }) => {
-    const server = opts.server.replace(/\/$/, "");
+  .option("--duckdns <domain>", "DuckDNS 域名，自动解析 tunnel URL（如 maxthjp）")
+  .action(async (opts: { server: string; token: string; duckdns?: string }) => {
+    let server = opts.server.replace(/\/$/, "");
+
+    // 如果指定了 duckdns，先解析出实际 URL
+    if (opts.duckdns) {
+      console.log(`🦆 从 DuckDNS 解析: ${opts.duckdns}.duckdns.org...`);
+      try {
+        const res = await fetch(`https://dns.google/resolve?name=${opts.duckdns}.duckdns.org&type=TXT`);
+        const data = await res.json() as any;
+        const txt = data.Answer?.find((a: any) => a.type === 16);
+        if (txt) {
+          const url = txt.data.replace(/"/g, "");
+          if (url.startsWith("https://")) {
+            server = url;
+            console.log(`✅ 解析到: ${server}`);
+          }
+        }
+      } catch (err) {
+        console.error(`⚠️  DuckDNS 解析失败: ${err}`);
+      }
+    }
+
     console.log(`🔗 正在连接 ${server}...`);
 
     // 用 secret token 换取 JWT
@@ -40,9 +61,13 @@ program
       token: jwt,
       machineId: "",
       agents: [],
+      ...(opts.duckdns ? { duckdns: opts.duckdns } : {}),
     };
     saveConfig(config);
     console.log("✅ 初始化成功！配置已保存到 ~/.tm-agent/config.json");
+    if (opts.duckdns) {
+      console.log(`   DuckDNS: ${opts.duckdns} (重连时自动解析最新 URL)`);
+    }
     console.log("   下一步: tm-agent add <name> --cmd <command>");
   });
 

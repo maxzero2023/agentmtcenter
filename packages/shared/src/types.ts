@@ -40,4 +40,5 @@ export interface AgentClientConfig {
   token: string;
   machineId: string;
   agents: AgentConfig[];
+  duckdns?: string; // e.g. "maxthjp" — auto-resolve tunnel URL from DuckDNS TXT
 }

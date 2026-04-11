@@ -3,6 +3,26 @@ import { loadConfig } from "./config.ts";
 import type { AgentToServerMessage, ServerToAgentMessage } from "@tm/shared";
 import { executeAgent, sendToStdinBySession, resumeSession } from "./executor.ts";
 
+async function resolveServer(config: { server: string; duckdns?: string }): Promise<string> {
+  if (!config.duckdns) return config.server;
+  try {
+    const res = await fetch(`https://dns.google/resolve?name=${config.duckdns}.duckdns.org&type=TXT`);
+    const data = await res.json() as any;
+    const txt = data.Answer?.find((a: any) => a.type === 16);
+    if (txt) {
+      const url = txt.data.replace(/"/g, "");
+      if (url.startsWith("https://")) {
+        console.log(`🦆 DuckDNS 解析: ${config.duckdns}.duckdns.org → ${url}`);
+        return url;
+      }
+    }
+    console.log(`⚠️  DuckDNS 解析失败，使用缓存地址: ${config.server}`);
+  } catch (err) {
+    console.log(`⚠️  DuckDNS 查询失败: ${err}，使用缓存地址: ${config.server}`);
+  }
+  return config.server;
+}
+
 export async function startDaemon() {
   const config = loadConfig();
   let ws: WebSocket | null = null;
@@ -10,7 +30,12 @@ export async function startDaemon() {
   let reconnectDelay = 1000;
   const MAX_RECONNECT_DELAY = 30_000;
 
-  function connect() {
+  async function connect() {
+    // 每次重连前解析最新 tunnel URL
+    const server = await resolveServer(config);
+    if (server !== config.server) {
+      config.server = server;
+    }
     const wsUrl = config.server.replace(/^http/, "ws") + `/ws/agent?token=${config.token}`;
     console.log(`🔌 连接到 ${config.server}...`);
 
