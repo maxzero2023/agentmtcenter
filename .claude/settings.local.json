@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh api:*)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:handbook-offering-barry-parenting.trycloudflare.com)"
+    ]
+  }
+}

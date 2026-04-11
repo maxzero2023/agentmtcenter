@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TM Dispatch - Connect</title>
+  <style>
+    body { background: #0f172a; color: #e2e8f0; font-family: system-ui; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+    .box { text-align: center; padding: 2rem; }
+    h1 { font-size: 1.5rem; margin-bottom: 1rem; }
+    .status { color: #94a3b8; font-size: 0.875rem; }
+    .url { color: #60a5fa; font-size: 0.75rem; word-break: break-all; margin-top: 0.5rem; }
+    .error { color: #f87171; }
+    a { color: #60a5fa; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h1>TM Dispatch</h1>
+    <p class="status" id="status">Resolving tunnel URL...</p>
+    <p class="url" id="url"></p>
+  </div>
+  <script>
+    async function resolve() {
+      const status = document.getElementById('status');
+      const urlEl = document.getElementById('url');
+      try {
+        // 用 Cloudflare DoH 查询 DuckDNS TXT 记录
+        const res = await fetch('https://cloudflare-dns.com/dns-query?name=maxthjp.duckdns.org&type=TXT', {
+          headers: { 'Accept': 'application/dns-json' }
+        });
+        const data = await res.json();
+        const txt = data.Answer?.find(a => a.type === 16);
+        if (txt) {
+          const url = txt.data.replace(/"/g, '');
+          if (url.startsWith('https://')) {
+            status.textContent = 'Redirecting...';
+            urlEl.innerHTML = '<a href="' + url + '">' + url + '</a>';
+            window.location.href = url;
+          } else {
+            status.textContent = 'Server offline';
+            status.className = 'status error';
+            urlEl.textContent = 'TXT: ' + url;
+          }
+        } else {
+          status.textContent = 'No tunnel URL found';
+          status.className = 'status error';
+        }
+      } catch (e) {
+        status.textContent = 'Failed: ' + e.message;
+        status.className = 'status error';
+      }
+    }
+    resolve();
+  </script>
+</body>
+</html>

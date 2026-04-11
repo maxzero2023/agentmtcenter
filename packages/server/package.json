@@ -1,0 +1,14 @@
+{
+  "name": "@tm/server",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --watch src/index.ts",
+    "start": "bun run src/index.ts"
+  },
+  "dependencies": {
+    "@tm/shared": "workspace:*",
+    "hono": "^4",
+    "jose": "^6"
+  }
+}

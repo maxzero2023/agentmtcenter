@@ -1,0 +1,19 @@
+{
+  "name": "taskmanager",
+  "type": "module",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "server": "bun run packages/server/src/index.ts",
+    "server:tunnel": "bun run packages/server/src/index.ts -- --tunnel",
+    "agent": "bun run packages/agent/src/index.ts",
+    "tm": "bun run packages/cli/src/index.ts",
+    "pwa": "cd packages/pwa && bun run dev"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5"
+  }
+}

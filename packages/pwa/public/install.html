@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TM Dispatch - Install</title>
+  <style>
+    body { background: #0f172a; color: #e2e8f0; font-family: system-ui; margin: 0; padding: 1.5rem; }
+    h1 { font-size: 1.25rem; }
+    h2 { font-size: 1rem; color: #94a3b8; margin-top: 2rem; }
+    .btn { display: block; width: 100%; padding: 12px; margin: 8px 0; border: none; border-radius: 8px; font-size: 1rem; text-align: center; text-decoration: none; cursor: pointer; }
+    .primary { background: #2563eb; color: white; }
+    .secondary { background: #334155; color: #e2e8f0; }
+    .code { background: #1e293b; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 0.75rem; word-break: break-all; margin: 8px 0; }
+    .step { background: #1e293b; padding: 12px; border-radius: 8px; margin: 8px 0; }
+    .step b { color: #60a5fa; }
+    .divider { border-top: 1px solid #334155; margin: 1.5rem 0; }
+    #status { color: #22c55e; margin: 8px 0; display: none; }
+  </style>
+</head>
+<body>
+  <h1>TM Dispatch</h1>
+  <p style="color:#94a3b8; font-size:0.875rem;">Agent Dispatch Center mobile entry</p>
+
+  <h2>Setup Token (one time)</h2>
+  <input id="tokenInput" type="password" placeholder="Server Secret Token"
+    style="width:100%; padding:10px; background:#1e293b; border:1px solid #475569; border-radius:8px; color:#e2e8f0; font-size:0.875rem; box-sizing:border-box; margin-bottom:8px;">
+  <p style="color:#64748b; font-size:0.7rem;">Token saved locally, never sent to third parties</p>
+
+  <h2>Connect</h2>
+  <a class="btn primary" id="goBtn" href="#">Open TM Dispatch</a>
+  <p id="status"></p>
+
+  <h2>Option 2: Add to Home Screen</h2>
+  <div class="step">
+    <b>Step 1:</b> Tap the Share button (bottom of Safari)<br>
+    <b>Step 2:</b> Tap "Add to Home Screen"<br>
+    <b>Step 3:</b> Name it "TM" and tap "Add"
+  </div>
+  <p style="color:#64748b; font-size:0.75rem;">This page will always redirect to the latest tunnel URL</p>
+
+  <div class="divider"></div>
+
+  <h2>Option 3: iOS Shortcut (Manual)</h2>
+  <a class="btn secondary" href="shortcuts://create-shortcut">Open Shortcuts App</a>
+  <div class="step">
+    <b>1.</b> New Shortcut → "Get Contents of URL"<br>
+    <div class="code">https://dns.google/resolve?name=maxthjp.duckdns.org&type=TXT</div>
+    <b>2.</b> Get Dictionary Value → <code>Answer</code><br>
+    <b>3.</b> Get Item from List → First Item<br>
+    <b>4.</b> Get Dictionary Value → <code>data</code><br>
+    <b>5.</b> Replace Text → find <code>"</code> replace with empty<br>
+    <b>6.</b> Open URL
+  </div>
+
+  <div class="divider"></div>
+  <p style="color:#475569; font-size:0.7rem; text-align:center;">Server token required on first login</p>
+
+  <script>
+    const STORAGE_KEY = 'tm-install-token';
+    const tokenInput = document.getElementById('tokenInput');
+
+    // 恢复已保存的 token
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) tokenInput.value = saved;
+    tokenInput.addEventListener('input', () => {
+      localStorage.setItem(STORAGE_KEY, tokenInput.value);
+    });
+
+    async function resolve() {
+      const btn = document.getElementById('goBtn');
+      const status = document.getElementById('status');
+      try {
+        const res = await fetch('https://dns.google/resolve?name=maxthjp.duckdns.org&type=TXT');
+        const data = await res.json();
+        const txt = data.Answer?.find(a => a.type === 16);
+        if (txt) {
+          const tunnelUrl = txt.data.replace(/"/g, '');
+          if (tunnelUrl.startsWith('https://')) {
+            const token = tokenInput.value || localStorage.getItem(STORAGE_KEY) || '';
+            const target = token ? tunnelUrl + '#token=' + encodeURIComponent(token) : tunnelUrl;
+            btn.href = target;
+            btn.onclick = (e) => {
+              localStorage.setItem(STORAGE_KEY, tokenInput.value);
+              btn.href = tokenInput.value ? tunnelUrl + '#token=' + encodeURIComponent(tokenInput.value) : tunnelUrl;
+            };
+            btn.textContent = 'Open TM Dispatch';
+            status.textContent = 'Online: ' + tunnelUrl;
+            status.style.display = 'block';
+            // 从主屏幕打开时自动跳转
+            if (window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches) {
+              if (token) window.location.href = target;
+            }
+          }
+        } else {
+          btn.textContent = 'Server Offline';
+          btn.style.background = '#991b1b';
+          status.textContent = 'No tunnel found';
+          status.style.color = '#f87171';
+          status.style.display = 'block';
+        }
+      } catch (e) {
+        btn.textContent = 'Error resolving';
+        btn.style.background = '#991b1b';
+      }
+    }
+    resolve();
+  </script>
+</body>
+</html>
