@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { readdirSync, readFileSync, existsSync, statSync } from "fs";
-import { homedir } from "os";
+import { homedir, hostname } from "os";
 import { join, basename, relative } from "path";
 import { createReadStream } from "fs";
 
@@ -10,12 +10,14 @@ const app = new Hono();
 const CLAUDE_PROJECTS_DIR = join(homedir(), ".claude", "projects");
 const CURSOR_WS_DIR = join(homedir(), "Library", "Application Support", "Cursor", "User", "workspaceStorage");
 const CURSOR_CHATS_DIR = join(homedir(), ".cursor", "chats");
+const LOCAL_MACHINE = hostname();
 
 interface WorkspaceInfo {
   id: string;
   name: string;
   path: string;
   source: "claude" | "cursor";
+  machine: string;
   sessions: SessionSummary[];
 }
 
@@ -116,6 +118,7 @@ function getCursorWorkspaces(): WorkspaceInfo[] {
         name: chatHash.slice(0, 8) + " (chat)",
         path: "",
         source: "cursor",
+        machine: LOCAL_MACHINE,
         sessions,
       });
     }
@@ -167,6 +170,7 @@ function getCursorWorkspaces(): WorkspaceInfo[] {
             name: shortName,
             path: projPath,
             source: "cursor",
+            machine: LOCAL_MACHINE,
             sessions: sessionSummaries,
           });
         }
@@ -287,6 +291,7 @@ app.get("/", (c) => {
         name: getShortName(dir),
         path: decodeProjectName(dir),
         source: "claude",
+        machine: LOCAL_MACHINE,
         sessions,
       });
     }

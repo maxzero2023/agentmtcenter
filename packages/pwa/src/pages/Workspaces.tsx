@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useApi, postApi } from "../hooks/useApi";
 import { useNavigate } from "react-router-dom";
 
@@ -17,6 +17,7 @@ interface WorkspaceInfo {
   name: string;
   path: string;
   source: "claude" | "cursor";
+  machine: string;
   sessions: SessionSummary[];
 }
 
@@ -29,6 +30,21 @@ export default function Workspaces() {
   const [newMsg, setNewMsg] = useState("");
   const [newAgent, setNewAgent] = useState<"claude" | "cursor">("claude");
   const [creating, setCreating] = useState(false);
+  const [selectedMachine, setSelectedMachine] = useState<string | null>(null);
+
+  const machines = useMemo(() => {
+    if (!workspaces) return [];
+    const set = new Set(workspaces.map(w => w.machine));
+    return Array.from(set).sort();
+  }, [workspaces]);
+
+  // 默认选中第一台机器
+  const activeMachine = selectedMachine ?? machines[0] ?? null;
+
+  const filtered = useMemo(() => {
+    if (!workspaces || !activeMachine) return workspaces ?? [];
+    return workspaces.filter(w => w.machine === activeMachine);
+  }, [workspaces, activeMachine]);
 
   if (loading) return <div className="p-6 text-[#9CA3AF] text-sm">Loading...</div>;
 
@@ -65,7 +81,7 @@ export default function Workspaces() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="font-heading text-2xl font-bold text-[#111827]">Projects</h1>
-          <p className="font-caption text-xs text-[#9CA3AF] mt-0.5">{workspaces?.length ?? 0} workspaces</p>
+          <p className="font-caption text-xs text-[#9CA3AF] mt-0.5">{filtered.length} workspaces</p>
         </div>
         <div className="flex gap-2">
           <button onClick={() => setShowNew(!showNew)} className="font-heading text-[13px] px-3.5 py-1.5 bg-[#4A96C4] hover:bg-[#3A7CA5] rounded-lg font-semibold text-white" style={{boxShadow: "0 2px 8px rgba(74,150,196,0.12)"}}>
@@ -76,6 +92,33 @@ export default function Workspaces() {
           </button>
         </div>
       </div>
+
+      {/* Machine switcher */}
+      {machines.length > 1 && (
+        <div className="flex gap-1.5 overflow-x-auto pb-1">
+          {machines.map(m => (
+            <button
+              key={m}
+              onClick={() => setSelectedMachine(m)}
+              className={`font-data text-[11px] px-3 py-1.5 rounded-lg flex-shrink-0 font-medium border ${
+                m === activeMachine
+                  ? "bg-[#4A96C4]/10 text-[#4A96C4] border-[#4A96C4]/20"
+                  : "bg-white text-[#9CA3AF] border-[#E5E7EB] active:bg-gray-50"
+              }`}
+            >
+              {m}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Single machine indicator */}
+      {machines.length === 1 && (
+        <div className="font-data text-[11px] text-[#9CA3AF] flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#3B9B6A]" />
+          {machines[0]}
+        </div>
+      )}
 
       {showNew && (
         <form onSubmit={handleCreate} className="bg-white rounded-[10px] p-4 space-y-3 border border-[#E5E7EB]" style={{boxShadow: "0 2px 8px rgba(0,0,0,0.06)"}}>
@@ -90,7 +133,7 @@ export default function Workspaces() {
       )}
 
       <div className="space-y-2.5">
-        {workspaces?.map((ws) => (
+        {filtered.map((ws) => (
           <div key={ws.id} className="bg-white rounded-[10px] overflow-hidden border border-[#E5E7EB]" style={{boxShadow: "0 2px 8px rgba(0,0,0,0.04)"}}>
             <div className="flex items-center justify-between px-4 py-3 active:bg-gray-50" onClick={() => toggle(ws.id)}>
               <div className="flex items-center min-w-0 gap-2">
