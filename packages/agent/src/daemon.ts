@@ -1,6 +1,8 @@
-import { hostname, platform } from "os";
+import { hostname, platform, homedir } from "os";
+import { readdirSync, existsSync, statSync, readFileSync } from "fs";
+import { join, basename } from "path";
 import { loadConfig } from "./config.ts";
-import type { AgentToServerMessage, ServerToAgentMessage } from "@tm/shared";
+import type { AgentToServerMessage, ServerToAgentMessage, WorkspaceSummary } from "@tm/shared";
 import { executeAgent, sendToStdinBySession, resumeSession } from "./executor.ts";
 
 async function resolveServer(config: { server: string; duckdns?: string }): Promise<string> {
@@ -45,7 +47,9 @@ export async function startDaemon() {
       console.log("✅ 已连接到调度服务器");
       reconnectDelay = 1000;
 
-      // 发送注册消息
+      // 扫描本机 workspace 并注册
+      const workspaces = scanWorkspaces();
+      console.log(`📂 扫描到 ${workspaces.length} 个 workspace`);
       const registerMsg: AgentToServerMessage = {
         type: "register",
         machine: {
@@ -54,6 +58,7 @@ export async function startDaemon() {
           tailscaleIp: getTailscaleIp(),
         },
         agents: config.agents,
+        workspaces,
       };
       ws!.send(JSON.stringify(registerMsg));
 
@@ -134,6 +139,61 @@ export async function startDaemon() {
     ws?.close();
     process.exit(0);
   });
+}
+
+function scanWorkspaces(): WorkspaceSummary[] {
+  const results: WorkspaceSummary[] = [];
+  // Claude Code
+  const ccDir = join(homedir(), ".claude", "projects");
+  if (existsSync(ccDir)) {
+    for (const dir of readdirSync(ccDir)) {
+      const p = join(ccDir, dir);
+      if (!statSync(p).isDirectory()) continue;
+      const sessions = readdirSync(p).filter(f => f.endsWith(".jsonl")).length;
+      if (sessions === 0) continue;
+      const parts = dir.split("-").filter(Boolean);
+      results.push({
+        id: dir,
+        name: parts[parts.length - 1] ?? dir,
+        path: dir.replace(/^-/, "/").replace(/-/g, "/"),
+        source: "claude",
+        sessionCount: sessions,
+      });
+    }
+  }
+  // Cursor (composerHeaders count by workspace)
+  try {
+    const globalDb = join(homedir(), "Library", "Application Support", "Cursor", "User", "globalStorage", "state.vscdb");
+    if (existsSync(globalDb)) {
+      const { Database } = require("bun:sqlite");
+      const db = new Database(globalDb, { readonly: true });
+      const row = db.query("SELECT value FROM ItemTable WHERE key='composer.composerHeaders'").get() as { value: string } | null;
+      db.close();
+      if (row) {
+        const hData = JSON.parse(row.value);
+        const wsMap = new Map<string, { path: string; name: string; count: number }>();
+        for (const c of hData.allComposers as any[]) {
+          const wsId = c.workspaceIdentifier?.id;
+          if (!wsId) continue;
+          if (!wsMap.has(wsId)) {
+            const fsPath = c.workspaceIdentifier?.uri?.fsPath || "";
+            wsMap.set(wsId, { path: fsPath, name: fsPath ? basename(fsPath) : wsId.slice(0, 8), count: 0 });
+          }
+          wsMap.get(wsId)!.count++;
+        }
+        for (const [wsId, info] of wsMap) {
+          results.push({
+            id: `cursor-ws:${wsId}`,
+            name: info.name,
+            path: info.path,
+            source: "cursor",
+            sessionCount: info.count,
+          });
+        }
+      }
+    }
+  } catch {}
+  return results;
 }
 
 function getTailscaleIp(): string {

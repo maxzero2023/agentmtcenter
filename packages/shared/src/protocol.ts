@@ -2,6 +2,14 @@ import type { AgentConfig } from "./types.ts";
 
 // === Agent → Server ===
 
+export interface WorkspaceSummary {
+  id: string;
+  name: string;
+  path: string;
+  source: "claude" | "cursor";
+  sessionCount: number;
+}
+
 export interface RegisterMessage {
   type: "register";
   machine: {
@@ -10,6 +18,7 @@ export interface RegisterMessage {
     tailscaleIp: string;
   };
   agents: AgentConfig[];
+  workspaces?: WorkspaceSummary[];
 }
 
 export interface HeartbeatMessage {

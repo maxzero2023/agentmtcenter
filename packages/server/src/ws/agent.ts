@@ -1,7 +1,13 @@
 import type { ServerWebSocket } from "bun";
-import type { AgentToServerMessage } from "@tm/shared";
+import type { AgentToServerMessage, WorkspaceSummary } from "@tm/shared";
 import { upsertMachine, updateMachineHeartbeat, setMachineOffline, updateAgentStatus, updateSessionStatus, getSession } from "../store.ts";
 import { broadcastOutput, broadcastStatus, notifySessionDone, notifySessionError } from "../router.ts";
+
+// 远程机器的 workspace 缓存: machineId → { hostname, workspaces }
+const remoteWorkspaces = new Map<string, { hostname: string; workspaces: WorkspaceSummary[] }>();
+export function getRemoteWorkspaces(): Map<string, { hostname: string; workspaces: WorkspaceSummary[] }> {
+  return remoteWorkspaces;
+}
 
 interface AgentWsData {
   machineId: string | null;
@@ -50,7 +56,7 @@ export async function handleAgentMessage(ws: ServerWebSocket<AgentWsData>, raw: 
 
   switch (msg.type) {
     case "register": {
-      const { machine, agents } = msg;
+      const { machine, agents, workspaces } = msg as any;
       // 生成或复用 machineId
       const machineId = `${machine.hostname}-${machine.tailscaleIp}`.replace(/\./g, "-");
       ws.data.machineId = machineId;
@@ -61,6 +67,12 @@ export async function handleAgentMessage(ws: ServerWebSocket<AgentWsData>, raw: 
         tailscaleIp: machine.tailscaleIp,
         os: machine.os,
       }, agents);
+
+      // 缓存远程 workspace
+      if (workspaces && Array.isArray(workspaces)) {
+        remoteWorkspaces.set(machineId, { hostname: machine.hostname, workspaces });
+        console.log(`📂 ${machine.hostname}: ${workspaces.length} workspaces`);
+      }
 
       machineConnections.set(machineId, ws);
       resetHeartbeatTimer(machineId);

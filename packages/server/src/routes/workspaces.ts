@@ -5,6 +5,7 @@ import { join, basename, relative } from "path";
 import { createReadStream } from "fs";
 
 import { Database } from "bun:sqlite";
+import { getRemoteWorkspaces } from "../ws/agent.ts";
 
 const app = new Hono();
 const CLAUDE_PROJECTS_DIR = join(homedir(), ".claude", "projects");
@@ -299,6 +300,26 @@ app.get("/", (c) => {
 
   // Cursor workspaces
   workspaces.push(...getCursorWorkspaces());
+
+  // 远程机器的 workspace（来自 agent 注册上报）
+  for (const [machineId, { hostname: remoteHost, workspaces: remoteWs }] of getRemoteWorkspaces()) {
+    if (remoteHost === LOCAL_MACHINE) continue; // 跳过本机（已直接读取）
+    for (const rw of remoteWs) {
+      workspaces.push({
+        id: `remote:${machineId}:${rw.id}`,
+        name: rw.name,
+        path: rw.path,
+        source: rw.source,
+        machine: remoteHost,
+        sessions: Array.from({ length: rw.sessionCount }, (_, i) => ({
+          id: `${rw.id}-s${i}`,
+          firstMessage: `(${rw.sessionCount} sessions on ${remoteHost})`,
+          timestamp: "",
+          messageCount: 0,
+        })).slice(0, 1), // 只放一个占位 session 显示数量
+      });
+    }
+  }
 
   // 按最新 session 时间排序
   workspaces.sort((a, b) => {
